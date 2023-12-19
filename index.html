@@ -1,1 +1,189 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Simple HTML Editor</title><style>body{margin:0;padding:0;display:flex;height:100vh;overflow:hidden;}#editor-container{flex:1;height:100%;}#editor{width:100%;height:100%;border:none;outline:none;padding:10px;font-size:16px;}#preview-container{flex:1;height:100%;background-color:#f8f8f8;overflow:auto;padding:10px;}#preview{width:100%;height:100%;border:none;}</style></head><body><div id="editor-container"><textarea id="editor" placeholder="Your HTML Code Here"></textarea></div><div id="preview-container"><iframe id="preview"></iframe></div><button id="downloadButton">Download HTML</button><script>const e=document.getElementById("editor"),p=document.getElementById("preview"),d=document.getElementById("downloadButton");window.onload=()=>{const s=localStorage.getItem("editorContent");s&&(e.value=s,updatePreview())},e.addEventListener("input",()=>{updatePreview(),localStorage.setItem("editorContent",e.value)});function updatePreview(){p.srcdoc=e.value}d.addEventListener("click",()=>{const s=e.value,a=new Blob([s],{type:"text/html"}),n=document.createElement("a");n.href=URL.createObjectURL(a),n.download="downloaded.html",n.style.display="none",document.body.appendChild(n),n.click(),document.body.removeChild(n)}),updatePreview();</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple HTML Editor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #editor {
+            width: 100%;
+            height: 300px;
+        }
+
+        #previewIframe {
+            width: 100%;
+            height: 300px;
+            margin-top: 10px;
+            display: none;
+            border: 1px solid #000;
+            border-radius: 5px;
+        }
+
+        #buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        #previewButton {
+            background-color: #4caf50;
+        }
+
+        #exitPreviewButton {
+            background-color: #e74c3c;
+            display: none;
+        }
+
+        #saveButton, #downloadButton, #importButton, #deleteButton {
+            background-color: #3498db;
+        }
+
+        #sizeInKB {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor"></div>
+    <iframe id="previewIframe"></iframe>
+    <div id="sizeInKB">Size: 0 KB</div>
+    <div id="buttons">
+        <button id="previewButton" onclick="showPreview()">Preview</button>
+        <button id="exitPreviewButton" onclick="exitPreview()">Exit Preview</button>
+        <button id="saveButton" style="display:none;" onclick="saveToLocalStorage()">Save</button>
+        <button id="downloadButton" style="display:none;" onclick="downloadHTML()">Download</button>
+        <button id="importButton" onclick="importHTML()">Import</button>
+        <button id="deleteButton" style="display:none;" onclick="deleteFromLocalStorage()">Delete</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script>
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/tomorrow_night");
+        editor.getSession().setMode("ace/mode/html");
+
+        const previewIframe = document.getElementById('previewIframe');
+        const sizeInKB = document.getElementById('sizeInKB');
+        const previewButton = document.getElementById('previewButton');
+        const exitPreviewButton = document.getElementById('exitPreviewButton');
+        const saveButton = document.getElementById('saveButton');
+        const downloadButton = document.getElementById('downloadButton');
+        const importButton = document.getElementById('importButton');
+        const deleteButton = document.getElementById('deleteButton');
+        previewButton.addEventListener('click', showPreview);
+        exitPreviewButton.addEventListener('click', exitPreview);
+        saveButton.addEventListener('click', saveToLocalStorage);
+        downloadButton.addEventListener('click', downloadHTML);
+        importButton.addEventListener('click', importHTML);
+        deleteButton.addEventListener('click', deleteFromLocalStorage);
+        window.onload = loadFromLocalStorage;
+
+        function showPreview() {
+            const htmlText = editor.getValue();
+
+            // Display in the iframe
+            previewIframe.srcdoc = htmlText;
+
+            editor.container.style.display = 'none';
+            previewIframe.style.display = 'block';
+            previewButton.style.display = 'none';
+            exitPreviewButton.style.display = 'inline-block';
+            saveButton.style.display = 'inline-block';
+            downloadButton.style.display = 'inline-block';
+            importButton.style.display = 'none'; // Hide the import button during preview
+            deleteButton.style.display = 'inline-block';
+            updateSizeInKB();
+        }
+
+        function exitPreview() {
+            editor.container.style.display = 'block';
+            previewIframe.style.display = 'none';
+            previewButton.style.display = 'inline-block';
+            exitPreviewButton.style.display = 'none';
+            saveButton.style.display = 'none';
+            downloadButton.style.display = 'none';
+            importButton.style.display = 'inline-block';
+            deleteButton.style.display = 'none';
+            updateSizeInKB();
+        }
+
+        function saveToLocalStorage() {
+            const contentToSave = editor.getValue();
+            localStorage.setItem('htmlContent', contentToSave);
+            alert('Content saved to local storage!');
+        }
+
+        function deleteFromLocalStorage() {
+            if (confirm('Are you sure you want to delete the content from local storage?')) {
+                localStorage.removeItem('htmlContent');
+                editor.setValue('');
+                alert('Content deleted from local storage!');
+            }
+        }
+
+        function loadFromLocalStorage() {
+            const savedContent = localStorage.getItem('htmlContent');
+            if (savedContent) {
+                editor.setValue(savedContent);
+                showPreview();
+            }
+        }
+
+        function updateSizeInKB() {
+            const size = (editor.getValue().length * 2) / 1024; // Assuming 2 bytes per character
+            sizeInKB.textContent = `Size: ${size.toFixed(2)} KB`;
+        }
+
+        function downloadHTML() {
+            const content = editor.getValue();
+            const blob = new Blob([content], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'html_file.html';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function importHTML() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.html, .htm';
+            input.onchange = function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (readerEvent) {
+                        const content = readerEvent.target.result;
+                        editor.setValue(content);
+                        showPreview();
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+    </script>
+</body>
+</html>
